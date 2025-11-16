@@ -1,0 +1,31 @@
+{
+  "participants": [
+    {
+      "name": "Alice",
+      "phone_number": "+1234567890"
+    },
+    {
+      "name": "Bob",
+      "phone_number": "+1234567891"
+    },
+    {
+      "name": "Charlie",
+      "phone_number": "+1234567892"
+    },
+    {
+      "name": "Diana",
+      "phone_number": "+1234567893"
+    },
+    {
+      "name": "Eve",
+      "phone_number": "+1234567894"
+    }
+  ],
+  "couples": [
+    {
+      "person1": "Alice",
+      "person2": "Bob"
+    }
+  ]
+}
+
