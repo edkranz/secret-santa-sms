@@ -7,7 +7,6 @@ A Python application that performs a Secret Santa draw and sends SMS notificatio
 - Secret Santa draw with automatic pairing
 - Couples exclusion: Couples will never draw each other
 - SMS notifications via Twilio API
-- Clean architecture with separation of concerns
 
 ## Setup
 
