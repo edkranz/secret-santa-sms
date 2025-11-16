@@ -1,6 +1,6 @@
 # Secret Santa SMS
 
-A Python application that performs a Secret Santa draw and sends SMS notifications via Twilio to each participant with their assigned recipient.
+A Python application that performs a Secret Santa draw and sends SMS notifications via Twilio to each participant with their assigned recipient, without spoiling the surprise for the organiser!
 
 ## Features
 
