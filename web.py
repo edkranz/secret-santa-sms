@@ -28,6 +28,8 @@ def perform_draw():
         data = request.json
         selected_participants = data.get('participants', [])
         exclusions = data.get('exclusions', [])
+        custom_message = data.get('message', '')
+        gift_limit = data.get('gift_limit', '$100')
         
         if len(selected_participants) < 2:
             return jsonify({'error': 'Need at least 2 participants'}), 400
@@ -71,7 +73,9 @@ def perform_draw():
             success = email_service.send_notification(
                 result.giver.email,
                 result.giver.name,
-                result.receiver.name
+                result.receiver.name,
+                custom_message,
+                gift_limit
             )
             
             email_results.append({

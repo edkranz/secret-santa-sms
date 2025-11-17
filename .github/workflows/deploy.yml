@@ -57,6 +57,7 @@ jobs:
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         scope: subscription
+        region: australiaeast
         template: ./infrastructure/azuredeploy.bicep
         parameters: parameters.json
         deploymentName: secret-santa-deployment

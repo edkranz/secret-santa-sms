@@ -151,7 +151,7 @@
                     <!-- Content -->
                     <tr>
                         <td class="content">
-                            <p style="font-size: 18px;">Hello {receiver_name},</p>
+                            <p style="font-size: 18px;">Hello {recipient_name},</p>
                         
                             
                             <p>You've been chosen to spread some festive joy to:</p>
@@ -159,12 +159,14 @@
                             <!-- The Gift Name Box -->
                             <div class="gift-box">
                                 <p class="gift-box-label">Your Secret Santa recipient is:</p>
-                                <h2 class="gift-name">{recipient_name}</h2>
+                                <h2 class="gift-name">{receiver_name}</h2>
                             </div>
+                            
+                            {custom_message}
                             
                             <p><strong>Keep it secret! Keep it safe!</strong> 🤫</p>
                             
-                            <p>The price limit is $100. Happy gifting! 🎁</p>
+                            <p>The price limit is {gift_limit}. Happy gifting! 🎁</p>
                         </td>
                     </tr>
                     

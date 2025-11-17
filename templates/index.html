@@ -307,6 +307,30 @@
             background: #45a049;
         }
         
+        .message-section {
+            background: #e8f5e9;
+            border: 2px dashed #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .message-section textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Open Sans', sans-serif;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .message-section textarea:focus {
+            outline: none;
+            border-color: #4caf50;
+        }
+        
         .send-button {
             width: 100%;
             background: linear-gradient(135deg, #c82424 0%, #d32f2f 100%);
@@ -453,6 +477,20 @@
                     <div id="exclusionsContainer">
                     </div>
                     <button class="add-exclusion" onclick="addExclusion()">+ Add Exclusion</button>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="message-section">
+                    <h2 class="section-title">💌 Custom Message</h2>
+                    <textarea id="customMessage" placeholder="Add a custom message to include in the Secret Santa emails (optional)"></textarea>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="message-section">
+                    <h2 class="section-title">💰 Gift Limit</h2>
+                    <input type="text" id="giftLimit" placeholder="$100" value="$100" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;" />
                 </div>
             </div>
             
@@ -731,6 +769,8 @@
             }
             
             const exclusions = getExclusions();
+            const customMessage = document.getElementById('customMessage').value.trim();
+            const giftLimit = document.getElementById('giftLimit').value.trim() || '$100';
             const sendButton = document.getElementById('sendButton');
             const loading = document.getElementById('loading');
             const successMessage = document.getElementById('successMessage');
@@ -747,7 +787,9 @@
                     },
                     body: JSON.stringify({
                         participants: participants,
-                        exclusions: exclusions
+                        exclusions: exclusions,
+                        message: customMessage,
+                        gift_limit: giftLimit
                     })
                 });
                 
