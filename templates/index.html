@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secret Santa Draw</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
         * {
             margin: 0;
@@ -23,16 +23,29 @@
         }
         
         .snowflake {
-            position: absolute;
+            position: fixed;
             color: white;
             font-size: 20px;
             animation: fall linear infinite;
             opacity: 0.7;
+            pointer-events: none;
+            z-index: 1;
         }
         
         @keyframes fall {
-            to {
+            0% {
+                transform: translateY(-10vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            85% {
+                opacity: 0.7;
+            }
+            100% {
                 transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
             }
         }
         
@@ -441,6 +454,146 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .input-error {
+            border-color: #d32f2f !important;
+            background-color: #ffebee !important;
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header::before,
+            .header::after {
+                font-size: 30px;
+                left: 10px;
+            }
+            
+            .header::after {
+                right: 10px;
+                left: auto;
+            }
+            
+            h1 {
+                font-size: 32px;
+                margin-bottom: 8px;
+            }
+            
+            .subtitle {
+                font-size: 14px;
+            }
+            
+            .content {
+                padding: 25px 15px;
+            }
+            
+            .section-title {
+                font-size: 22px;
+                margin-bottom: 15px;
+            }
+            
+            .participants-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .form-row input {
+                width: 100%;
+            }
+            
+            .add-participant-form {
+                padding: 15px;
+            }
+            
+            .exclusion-pair {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .exclusion-pair span {
+                text-align: center;
+                font-size: 14px;
+            }
+            
+            .remove-exclusion {
+                align-self: center;
+                margin-top: 5px;
+            }
+            
+            .send-button {
+                font-size: 22px;
+                padding: 16px;
+            }
+            
+            .message-section {
+                padding: 15px;
+            }
+            
+            .exclusions-section {
+                padding: 15px;
+            }
+            
+            .participant-card {
+                padding: 12px;
+            }
+            
+            .participant-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .edit-participant,
+            .save-participant,
+            .cancel-edit {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 28px;
+            }
+            
+            .header::before,
+            .header::after {
+                font-size: 24px;
+            }
+            
+            .section-title {
+                font-size: 20px;
+            }
+            
+            .send-button {
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -463,9 +616,11 @@
                 <h2 class="section-title">🎁 Participants</h2>
                 <div class="add-participant-form">
                     <div class="form-row">
-                        <input type="text" id="participantName" placeholder="Name" />
-                        <input type="email" id="participantEmail" placeholder="Email address" />
+                        <input type="text" id="participantName" placeholder="Name" required />
+                        <input type="email" id="participantEmail" placeholder="Email address" required 
+                               pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" />
                     </div>
+                    <div class="error-message" id="emailError">Please enter a valid email address</div>
                     <button class="add-participant-btn" onclick="addParticipant()">+ Add Participant</button>
                 </div>
                 <div class="participants-grid" id="participantsGrid">
@@ -505,8 +660,8 @@
                 <div class="sent-list" id="sentList"></div>
             </div>
             
-            <div id="recaptchaContainer" style="display: none; margin: 20px 0; text-align: center;">
-                <div class="g-recaptcha" data-sitekey="" data-callback="onRecaptchaSuccess"></div>
+            <div id="turnstileContainer" style="margin: 20px 0; text-align: center;">
+                <div class="cf-turnstile" data-sitekey="" data-callback="onTurnstileSuccess"></div>
             </div>
             
             <button class="send-button" id="sendButton" onclick="performDraw()">Send Secret Santa Draw 🎄</button>
@@ -516,28 +671,47 @@
     <script>
         let participants = [];
         let editingParticipant = null;
-        let recaptchaEnabled = false;
-        let recaptchaSiteKey = null;
-        let recaptchaToken = null;
+        let turnstileEnabled = false;
+        let turnstileSiteKey = null;
+        let turnstileToken = null;
         
         async function loadConfig() {
             try {
                 const response = await fetch('/api/config');
                 const config = await response.json();
-                recaptchaEnabled = config.recaptcha_enabled;
-                recaptchaSiteKey = config.recaptcha_site_key;
+                turnstileEnabled = config.turnstile_enabled;
+                turnstileSiteKey = config.turnstile_site_key;
                 
-                if (recaptchaEnabled && recaptchaSiteKey) {
-                    document.getElementById('recaptchaContainer').style.display = 'block';
-                    document.querySelector('[data-sitekey]').setAttribute('data-sitekey', recaptchaSiteKey);
+                if (turnstileSiteKey) {
+                    document.querySelector('[data-sitekey]').setAttribute('data-sitekey', turnstileSiteKey);
                 }
             } catch (error) {
                 console.error('Failed to load config:', error);
             }
         }
         
-        function onRecaptchaSuccess(token) {
-            recaptchaToken = token;
+        function onTurnstileSuccess(token) {
+            turnstileToken = token;
+        }
+        
+        function validateEmail(email) {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            return emailRegex.test(email);
+        }
+        
+        function showEmailError(message) {
+            const emailError = document.getElementById('emailError');
+            const emailInput = document.getElementById('participantEmail');
+            emailError.textContent = message;
+            emailError.classList.add('show');
+            emailInput.classList.add('input-error');
+        }
+        
+        function hideEmailError() {
+            const emailError = document.getElementById('emailError');
+            const emailInput = document.getElementById('participantEmail');
+            emailError.classList.remove('show');
+            emailInput.classList.remove('input-error');
         }
         
         window.addEventListener('load', loadConfig);
@@ -548,13 +722,25 @@
             const name = nameInput.value.trim();
             const email = emailInput.value.trim();
             
+            hideEmailError();
+            
             if (!name) {
                 alert('Please enter a name');
                 return;
             }
             
             if (!email) {
-                alert('Please enter an email address');
+                showEmailError('Please enter an email address');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showEmailError('Please enter a valid email address');
+                return;
+            }
+            
+            if (participants.some(p => p.email.toLowerCase() === email.toLowerCase() && p !== editingParticipant)) {
+                showEmailError('This email address is already registered');
                 return;
             }
             
@@ -574,6 +760,7 @@
             
             nameInput.value = '';
             emailInput.value = '';
+            nameInput.focus();
             
             renderParticipants();
             updateExclusionDropdowns();
@@ -615,6 +802,18 @@
             
             if (!newEmail) {
                 alert('Please enter an email address');
+                return;
+            }
+            
+            if (!validateEmail(newEmail)) {
+                alert('Please enter a valid email address');
+                emailInput.classList.add('input-error');
+                return;
+            }
+            
+            if (participants.some(p => p.email.toLowerCase() === newEmail.toLowerCase() && p !== participant)) {
+                alert('This email address is already registered');
+                emailInput.classList.add('input-error');
                 return;
             }
             
@@ -787,6 +986,23 @@
             }
         });
         
+        document.getElementById('participantEmail').addEventListener('input', function(e) {
+            const email = e.target.value.trim();
+            if (email.length > 0 && !validateEmail(email)) {
+                e.target.classList.add('input-error');
+            } else {
+                e.target.classList.remove('input-error');
+                hideEmailError();
+            }
+        });
+        
+        document.getElementById('participantEmail').addEventListener('blur', function(e) {
+            const email = e.target.value.trim();
+            if (email.length > 0 && !validateEmail(email)) {
+                showEmailError('Please enter a valid email address');
+            }
+        });
+        
         async function performDraw() {
             if (participants.length < 2) {
                 alert('Please add at least 2 participants!');
@@ -809,8 +1025,8 @@
             loading.classList.add('show');
             successMessage.classList.remove('show');
             
-            if (recaptchaEnabled && !recaptchaToken) {
-                alert('Please complete the reCAPTCHA verification');
+            if (turnstileEnabled && !turnstileToken) {
+                alert('Please complete the verification');
                 sendButton.disabled = false;
                 loading.classList.remove('show');
                 return;
@@ -824,8 +1040,8 @@
                     gift_limit: giftLimit
                 };
                 
-                if (recaptchaEnabled) {
-                    requestBody.recaptcha_token = recaptchaToken;
+                if (turnstileEnabled) {
+                    requestBody.turnstile_token = turnstileToken;
                 }
                 
                 const response = await fetch('/api/draw', {
@@ -869,9 +1085,9 @@
             } finally {
                 sendButton.disabled = false;
                 loading.classList.remove('show');
-                if (recaptchaEnabled && typeof grecaptcha !== 'undefined') {
-                    grecaptcha.reset();
-                    recaptchaToken = null;
+                if (turnstileEnabled && typeof turnstile !== 'undefined') {
+                    turnstile.reset();
+                    turnstileToken = null;
                 }
             }
         }

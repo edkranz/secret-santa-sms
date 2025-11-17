@@ -3,6 +3,7 @@ import json
 import os
 import secrets
 import requests
+import re
 from typing import List, Optional
 from functools import wraps
 from flask_limiter import Limiter
@@ -15,8 +16,8 @@ from config import Config
 app = Flask(__name__)
 
 API_KEY = os.environ.get('API_KEY')
-RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY')
-RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY')
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY')
 
 limiter = Limiter(
     app=app,
@@ -25,16 +26,23 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
-def verify_recaptcha(token):
-    """Verify reCAPTCHA token with Google"""
-    if not RECAPTCHA_SECRET_KEY:
+def validate_email(email: str) -> bool:
+    """Validate email format using regex"""
+    if not email:
+        return False
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(email_regex, email) is not None
+
+def verify_turnstile(token):
+    """Verify Cloudflare Turnstile token"""
+    if not TURNSTILE_SECRET_KEY:
         return True
     
     try:
         response = requests.post(
-            'https://www.google.com/recaptcha/api/siteverify',
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
             data={
-                'secret': RECAPTCHA_SECRET_KEY,
+                'secret': TURNSTILE_SECRET_KEY,
                 'response': token
             },
             timeout=5
@@ -42,7 +50,7 @@ def verify_recaptcha(token):
         result = response.json()
         return result.get('success', False)
     except Exception as e:
-        app.logger.error(f"reCAPTCHA verification failed: {e}")
+        app.logger.error(f"Turnstile verification failed: {e}")
         return False
 
 def require_api_key(f):
@@ -65,19 +73,19 @@ def require_api_key(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def require_recaptcha(f):
+def require_turnstile(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not RECAPTCHA_SECRET_KEY:
+        if not TURNSTILE_SECRET_KEY:
             return f(*args, **kwargs)
         
-        recaptcha_token = request.json.get('recaptcha_token') if request.json else None
+        turnstile_token = request.json.get('turnstile_token') if request.json else None
         
-        if not recaptcha_token:
-            return jsonify({'error': 'reCAPTCHA verification required'}), 400
+        if not turnstile_token:
+            return jsonify({'error': 'Turnstile verification required'}), 400
         
-        if not verify_recaptcha(recaptcha_token):
-            return jsonify({'error': 'reCAPTCHA verification failed. Please try again.'}), 403
+        if not verify_turnstile(turnstile_token):
+            return jsonify({'error': 'Turnstile verification failed. Please try again.'}), 403
         
         return f(*args, **kwargs)
     return decorated_function
@@ -97,15 +105,15 @@ def index():
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    """Return public configuration like reCAPTCHA site key"""
+    """Return public configuration like Turnstile site key"""
     return jsonify({
-        'recaptcha_site_key': RECAPTCHA_SITE_KEY,
-        'recaptcha_enabled': bool(RECAPTCHA_SECRET_KEY)
+        'turnstile_site_key': TURNSTILE_SITE_KEY,
+        'turnstile_enabled': bool(TURNSTILE_SECRET_KEY)
     })
 
 @app.route('/api/draw', methods=['POST'])
 @limiter.limit("3 per hour")
-@require_recaptcha
+@require_turnstile
 @require_api_key
 def perform_draw():
     try:
@@ -117,6 +125,20 @@ def perform_draw():
         
         if len(selected_participants) < 2:
             return jsonify({'error': 'Need at least 2 participants'}), 400
+        
+        for p in selected_participants:
+            email = p.get('email')
+            if email and not validate_email(email):
+                return jsonify({'error': f'Invalid email address for {p.get("name", "participant")}: {email}'}), 400
+        
+        email_set = set()
+        for p in selected_participants:
+            email = p.get('email')
+            if email:
+                email_lower = email.lower()
+                if email_lower in email_set:
+                    return jsonify({'error': f'Duplicate email address: {email}'}), 400
+                email_set.add(email_lower)
         
         participants = [
             Participant(
@@ -177,6 +199,6 @@ def perform_draw():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
+    port = int(os.environ.get('PORT', 80))
     app.run(host='0.0.0.0', port=port, debug=False)
 
