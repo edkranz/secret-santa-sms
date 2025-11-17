@@ -14,20 +14,25 @@ param pythonVersion string = '3.11'
 var appServicePlanName = '${appName}-plan'
 var appServiceName = '${appName}-app'
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
   location: location
   sku: {
     name: appServicePlanSku
     tier: 'Basic'
+    capacity: 1
   }
   kind: 'linux'
   properties: {
     reserved: true
   }
+  tags: {
+    application: appName
+    environment: 'production'
+  }
 }
 
-resource appService 'Microsoft.Web/sites@2023-01-01' = {
+resource appService 'Microsoft.Web/sites@2023-12-01' = {
   name: appServiceName
   location: location
   kind: 'app,linux'
@@ -35,6 +40,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
     serverFarmId: appServicePlan.id
     siteConfig: {
       linuxFxVersion: 'PYTHON|${pythonVersion}'
+      appCommandLine: 'gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 2 --timeout 120 web:app'
       appSettings: [
         {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
@@ -54,11 +60,19 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
         }
       ]
       alwaysOn: true
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
     }
     httpsOnly: true
+    clientAffinityEnabled: false
+  }
+  tags: {
+    application: appName
+    environment: 'production'
   }
 }
 
 output appServiceName string = appService.name
 output appServiceUrl string = 'https://${appService.properties.defaultHostName}'
+output appServicePlanName string = appServicePlan.name
 

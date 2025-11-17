@@ -14,12 +14,20 @@ Configure the following secrets in your GitHub repository:
 
 1. **AZURE_CREDENTIALS** - Service principal credentials in JSON format:
    ```json
-  {
-    "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    "clientSecret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    "subscriptionId": "8fe27bea-9457-4b6e-850b-618b322fe2cf",
-    "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  }
+   {
+     "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+     "clientSecret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+     "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+     "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+   }
+   ```
+   
+   To create a service principal:
+   ```bash
+   az ad sp create-for-rbac --name "secret-santa-deploy" \
+     --role contributor \
+     --scopes /subscriptions/{subscription-id} \
+     --sdk-auth
    ```
 
 2. **AZURE_SUBSCRIPTION_ID** - Your Azure subscription ID
@@ -38,31 +46,70 @@ To deploy manually using Azure CLI:
 # Login to Azure
 az login
 
-# Create resource group (if it doesn't exist)
-az group create --name rg-secret-santa --location australiaeast
-
-# Deploy infrastructure
+# Deploy infrastructure (resource group is created automatically)
 az deployment sub create \
   --location australiaeast \
   --template-file infrastructure/azuredeploy.bicep \
-  --parameters resourceGroupName=rg-secret-santa appName=secret-santa
+  --parameters \
+    resourceGroupName=rg-secret-santa \
+    appName=secret-santa \
+    location=australiaeast \
+    pythonVersion=3.11
 ```
 
 ## Architecture
 
 The infrastructure deploys:
 
-- **App Service Plan** (Linux, Basic tier)
+- **Resource Group** - Container for all resources
+- **App Service Plan** (Linux, Basic B1 tier)
+  - 1.75 GB RAM, 1 vCPU
+  - Reserved for Linux containers
 - **App Service** (Python 3.11)
-  - Configured for HTTPS only
+  - HTTPS only enforced
   - Always On enabled
-  - Build automation enabled
+  - FTPS disabled for security
+  - TLS 1.2 minimum
+  - Build automation with Oryx
+  - Gunicorn configured as startup command
+
+## Deployment Flow
+
+1. **Infrastructure Deployment** - Creates/updates Azure resources
+2. **Configuration** - Sets application settings and secrets
+3. **Package Creation** - Zips application files
+4. **App Deployment** - Uploads and deploys code to App Service
+5. **Restart** - Restarts the app to apply changes
 
 ## Environment Variables
 
-The following environment variables are set via GitHub Actions:
+The following environment variables are configured via GitHub Actions:
 
-- `AZURE_COMMUNICATION_CONNECTION_STRING` - From GitHub secrets
-- `AZURE_SENDER_EMAIL` - From GitHub secrets
-- `EMAIL_TEMPLATE_PATH` - Set to `email_template.html`
+- `AZURE_COMMUNICATION_CONNECTION_STRING` - Azure Communication Services connection string
+- `AZURE_SENDER_EMAIL` - Verified sender email address
+- `EMAIL_TEMPLATE_PATH` - Path to email template (`email_template.html`)
+
+## Troubleshooting
+
+### Conflict Error
+
+If you see a "Conflict" error, it usually means:
+- Resources already exist from a previous deployment (this is normal, deployment will update them)
+- Resource names are not globally unique (unlikely with current naming scheme)
+
+The deployment is idempotent and safe to re-run.
+
+### Deployment Failed
+
+Check the deployment logs in Azure Portal:
+1. Navigate to Subscriptions → Deployments
+2. Find your deployment by name (secret-santa-deployment-{run_number})
+3. Review operation details for specific errors
+
+### App Not Starting
+
+Check application logs:
+```bash
+az webapp log tail --name secret-santa-app --resource-group rg-secret-santa
+```
 

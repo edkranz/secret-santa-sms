@@ -16,14 +16,17 @@ param appServicePlanSku string = 'B1'
 @allowed(['3.9', '3.10', '3.11', '3.12'])
 param pythonVersion string = '3.11'
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: resourceGroupName
   location: location
-  properties: {}
+  tags: {
+    application: 'secret-santa'
+    environment: 'production'
+  }
 }
 
 module mainModule 'main.bicep' = {
-  name: 'mainModule'
+  name: 'mainModule-${uniqueString(resourceGroupName)}'
   scope: resourceGroup
   params: {
     appName: appName
@@ -33,6 +36,7 @@ module mainModule 'main.bicep' = {
   }
 }
 
+output resourceGroupName string = resourceGroup.name
 output appServiceName string = mainModule.outputs.appServiceName
 output appServiceUrl string = mainModule.outputs.appServiceUrl
 

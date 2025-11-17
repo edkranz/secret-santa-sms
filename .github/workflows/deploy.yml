@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: secret-santa-app
   PYTHON_VERSION: '3.11'
-  AZURE_RG_NAME: ${{ secrets.AZURE_RG_NAME }}
+  APP_NAME: 'secret-santa'
+  LOCATION: 'australiaeast'
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
@@ -28,72 +28,86 @@ jobs:
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-        enable-AzPSSession: true
-
-    - name: Create parameters file
-      run: |
-        cat > parameters.json <<EOF
-        {
-          "resourceGroupName": {
-            "value": "${{ env.AZURE_RG_NAME }}"
-          },
-          "location": {
-            "value": "australiaeast"
-          },
-          "appName": {
-            "value": "secret-santa"
-          },
-          "appServicePlanSku": {
-            "value": "B1"
-          },
-          "pythonVersion": {
-            "value": "${{ env.PYTHON_VERSION }}"
-          }
-        }
-        EOF
 
     - name: Deploy Infrastructure
       id: deploy-infra
-      uses: azure/arm-deploy@v1
+      uses: azure/arm-deploy@v2
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         scope: subscription
-        region: australiaeast
+        region: ${{ env.LOCATION }}
         template: ./infrastructure/azuredeploy.bicep
-        parameters: parameters.json
-        deploymentName: secret-santa-deployment
-        failOnEmptyChanges: false
+        parameters: >
+          resourceGroupName=${{ secrets.AZURE_RG_NAME }}
+          location=${{ env.LOCATION }}
+          appName=${{ env.APP_NAME }}
+          appServicePlanSku=B1
+          pythonVersion=${{ env.PYTHON_VERSION }}
+        deploymentName: secret-santa-deployment-${{ github.run_number }}
+        failOnStdErr: false
+        deploymentMode: Incremental
+
+    - name: Get deployment outputs
+      id: get-outputs
+      run: |
+        APP_NAME=$(az deployment sub show \
+          --name secret-santa-deployment-${{ github.run_number }} \
+          --query properties.outputs.appServiceName.value \
+          --output tsv)
+        RG_NAME=$(az deployment sub show \
+          --name secret-santa-deployment-${{ github.run_number }} \
+          --query properties.outputs.resourceGroupName.value \
+          --output tsv)
+        echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+        echo "rg_name=$RG_NAME" >> $GITHUB_OUTPUT
+        echo "Deployed App Service: $APP_NAME"
+        echo "Resource Group: $RG_NAME"
+
+    - name: Configure App Settings
+      run: |
+        az webapp config appsettings set \
+          --name ${{ steps.get-outputs.outputs.app_name }} \
+          --resource-group ${{ steps.get-outputs.outputs.rg_name }} \
+          --settings \
+            AZURE_COMMUNICATION_CONNECTION_STRING="${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING }}" \
+            AZURE_SENDER_EMAIL="${{ secrets.AZURE_SENDER_EMAIL }}" \
+            EMAIL_TEMPLATE_PATH="email_template.html"
 
     - name: Create deployment package
       run: |
-        zip -r deploy.zip . -x "*.git*" -x "*venv*" -x "*__pycache__*" -x "*.pyc" -x "*.env" -x "*.zip"
+        zip -r deploy.zip . \
+          -x "*.git*" \
+          -x "*venv*" \
+          -x "*__pycache__*" \
+          -x "*.pyc" \
+          -x "*.env*" \
+          -x "*.zip" \
+          -x "*infrastructure*" \
+          -x "*.md"
 
     - name: Deploy to Azure Web App
-      uses: azure/CLI@v2
-      with:
-        inlineScript: |
-          az webapp deployment source config-zip \
-            --resource-group ${{ env.AZURE_RG_NAME }} \
-            --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --src deploy.zip
+      run: |
+        az webapp deployment source config-zip \
+          --resource-group ${{ steps.get-outputs.outputs.rg_name }} \
+          --name ${{ steps.get-outputs.outputs.app_name }} \
+          --src deploy.zip \
+          --timeout 600
 
-    - name: Configure App Settings and Startup Command
-      uses: azure/CLI@v2
-      with:
-        inlineScript: |
-          az webapp config appsettings set \
-            --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group ${{ env.AZURE_RG_NAME }} \
-            --settings \
-              AZURE_COMMUNICATION_CONNECTION_STRING="${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING }}" \
-              AZURE_SENDER_EMAIL="${{ secrets.AZURE_SENDER_EMAIL }}" \
-              EMAIL_TEMPLATE_PATH="email_template.html" \
-              SCM_DO_BUILD_DURING_DEPLOYMENT="true" \
-              ENABLE_ORYX_BUILD="true" \
-              POST_BUILD_COMMAND="pip install -r requirements.txt"
-          
-          az webapp config set \
-            --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group ${{ env.AZURE_RG_NAME }} \
-            --startup-file "gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 2 --timeout 120 web:app"
+    - name: Restart Web App
+      run: |
+        az webapp restart \
+          --name ${{ steps.get-outputs.outputs.app_name }} \
+          --resource-group ${{ steps.get-outputs.outputs.rg_name }}
+
+    - name: Deployment Summary
+      run: |
+        APP_URL=$(az deployment sub show \
+          --name secret-santa-deployment-${{ github.run_number }} \
+          --query properties.outputs.appServiceUrl.value \
+          --output tsv)
+        echo "### Deployment Successful! :rocket:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **App Name**: ${{ steps.get-outputs.outputs.app_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Resource Group**: ${{ steps.get-outputs.outputs.rg_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **URL**: $APP_URL" >> $GITHUB_STEP_SUMMARY
 
