@@ -71,7 +71,9 @@ jobs:
           --settings \
             AZURE_COMMUNICATION_CONNECTION_STRING="${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING }}" \
             AZURE_SENDER_EMAIL="${{ secrets.AZURE_SENDER_EMAIL }}" \
-            EMAIL_TEMPLATE_PATH="email_template.html"
+            EMAIL_TEMPLATE_PATH="email_template.html" \
+            RECAPTCHA_SECRET_KEY="${{ secrets.RECAPTCHA_SECRET_KEY }}" \
+            RECAPTCHA_SITE_KEY="${{ secrets.RECAPTCHA_SITE_KEY }}"
 
     - name: Create deployment package
       run: |

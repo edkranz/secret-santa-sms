@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secret Santa Draw</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         * {
             margin: 0;
@@ -504,6 +505,10 @@
                 <div class="sent-list" id="sentList"></div>
             </div>
             
+            <div id="recaptchaContainer" style="display: none; margin: 20px 0; text-align: center;">
+                <div class="g-recaptcha" data-sitekey="" data-callback="onRecaptchaSuccess"></div>
+            </div>
+            
             <button class="send-button" id="sendButton" onclick="performDraw()">Send Secret Santa Draw 🎄</button>
         </div>
     </div>
@@ -511,6 +516,31 @@
     <script>
         let participants = [];
         let editingParticipant = null;
+        let recaptchaEnabled = false;
+        let recaptchaSiteKey = null;
+        let recaptchaToken = null;
+        
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                recaptchaEnabled = config.recaptcha_enabled;
+                recaptchaSiteKey = config.recaptcha_site_key;
+                
+                if (recaptchaEnabled && recaptchaSiteKey) {
+                    document.getElementById('recaptchaContainer').style.display = 'block';
+                    document.querySelector('[data-sitekey]').setAttribute('data-sitekey', recaptchaSiteKey);
+                }
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+        
+        function onRecaptchaSuccess(token) {
+            recaptchaToken = token;
+        }
+        
+        window.addEventListener('load', loadConfig);
         
         function addParticipant() {
             const nameInput = document.getElementById('participantName');
@@ -779,18 +809,31 @@
             loading.classList.add('show');
             successMessage.classList.remove('show');
             
+            if (recaptchaEnabled && !recaptchaToken) {
+                alert('Please complete the reCAPTCHA verification');
+                sendButton.disabled = false;
+                loading.classList.remove('show');
+                return;
+            }
+            
             try {
+                const requestBody = {
+                    participants: participants,
+                    exclusions: exclusions,
+                    message: customMessage,
+                    gift_limit: giftLimit
+                };
+                
+                if (recaptchaEnabled) {
+                    requestBody.recaptcha_token = recaptchaToken;
+                }
+                
                 const response = await fetch('/api/draw', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        participants: participants,
-                        exclusions: exclusions,
-                        message: customMessage,
-                        gift_limit: giftLimit
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();
@@ -826,6 +869,10 @@
             } finally {
                 sendButton.disabled = false;
                 loading.classList.remove('show');
+                if (recaptchaEnabled && typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                    recaptchaToken = null;
+                }
             }
         }
     </script>

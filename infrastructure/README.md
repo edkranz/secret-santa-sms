@@ -38,6 +38,17 @@ Configure the following secrets in your GitHub repository:
 
 5. **AZURE_SENDER_EMAIL** - Verified sender email address for Azure Communication Services
 
+6. **RECAPTCHA_SECRET_KEY** - Google reCAPTCHA v2 secret key for bot protection (RECOMMENDED)
+
+7. **RECAPTCHA_SITE_KEY** - Google reCAPTCHA v2 site key for bot protection (RECOMMENDED)
+   ```bash
+   # Get keys from: https://www.google.com/recaptcha/admin/create
+   # See RECAPTCHA_SETUP.md for detailed instructions
+   
+   gh secret set RECAPTCHA_SECRET_KEY --body 'your-secret-key'
+   gh secret set RECAPTCHA_SITE_KEY --body 'your-site-key'
+   ```
+
 ## Manual Deployment
 
 To deploy manually using Azure CLI:
