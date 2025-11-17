@@ -2,23 +2,28 @@
   "participants": [
     {
       "name": "Alice",
-      "phone_number": "+1234567890"
+      "phone_number": "+1234567890",
+      "email": "alice@example.com"
     },
     {
       "name": "Bob",
-      "phone_number": "+1234567891"
+      "phone_number": "+1234567891",
+      "email": "bob@example.com"
     },
     {
       "name": "Charlie",
-      "phone_number": "+1234567892"
+      "phone_number": "+1234567892",
+      "email": "charlie@example.com"
     },
     {
       "name": "Diana",
-      "phone_number": "+1234567893"
+      "phone_number": "+1234567893",
+      "email": "diana@example.com"
     },
     {
       "name": "Eve",
-      "phone_number": "+1234567894"
+      "phone_number": "+1234567894",
+      "email": "eve@example.com"
     }
   ],
   "couples": [

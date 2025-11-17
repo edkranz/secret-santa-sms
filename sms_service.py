@@ -1,19 +1,9 @@
-from abc import ABC, abstractmethod
 from typing import List
 from models import DrawResult
+from notification_service import NotificationService
 
 
-class SMSService(ABC):
-    @abstractmethod
-    def send_message(self, phone_number: str, message: str) -> bool:
-        pass
-
-    @abstractmethod
-    def send_draw_results(self, results: List[DrawResult]) -> None:
-        pass
-
-
-class TwilioSMSService(SMSService):
+class TwilioSMSService(NotificationService):
     def __init__(self, account_sid: str, auth_token: str, from_number: str = None, from_name: str = None):
         try:
             from twilio.rest import Client
@@ -27,23 +17,31 @@ class TwilioSMSService(SMSService):
         self.from_number = from_number
         self.from_name = from_name
 
-    def send_message(self, phone_number: str, message: str) -> bool:
+    def send_notification(self, recipient: str, recipient_name: str, receiver_name: str) -> bool:
         try:
+            message = self._format_message(recipient_name, receiver_name)
             from_sender = self.from_name if self.from_name else self.from_number
             self.client.messages.create(
                 body=message,
                 from_=from_sender,
-                to=phone_number
+                to=recipient
             )
             return True
         except Exception as e:
-            print(f"Failed to send SMS to {phone_number}: {e}")
+            print(f"Failed to send SMS to {recipient}: {e}")
             return False
 
     def send_draw_results(self, results: List[DrawResult]) -> None:
         for result in results:
-            message = self._format_message(result.giver.name, result.receiver.name)
-            success = self.send_message(result.giver.phone_number, message)
+            if not result.giver.phone_number:
+                print(f"✗ Skipping {result.giver.name} - no phone number provided")
+                continue
+            
+            success = self.send_notification(
+                result.giver.phone_number,
+                result.giver.name,
+                result.receiver.name
+            )
             if success:
                 print(f"✓ Sent SMS to {result.giver.name}")
             else:

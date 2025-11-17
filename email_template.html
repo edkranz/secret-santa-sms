@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're a Secret Santa!</title>
+    <!-- Google Font for festive heading -->
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* This CSS is for email client compatibility */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+        }
+        /* Resets */
+        body {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+        /* Main container */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        /* Header */
+        .header {
+            background-color: #c82424; /* Deep Christmas Red */
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header-title {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 42px;
+            margin: 0;
+            line-height: 1.2;
+        }
+        .header-subtitle {
+            font-family: Georgia, serif;
+            font-size: 18px;
+            margin: 10px 0 0;
+            font-style: italic;
+        }
+        /* Body content */
+        .content {
+            padding: 40px 30px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .content p {
+            font-size: 16px;
+            margin: 18px 0;
+        }
+        /* The "To Gift" box */
+        .gift-box {
+            background-color: #f4f4f4;
+            border: 2px dashed #006400; /* Dark Christmas Green */
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .gift-box-label {
+            font-size: 14px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 10px;
+        }
+        .gift-name {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 38px;
+            color: #c82424; /* Deep Red */
+            margin: 0;
+            font-weight: 700;
+        }
+        /* Footer */
+        .footer {
+            background-color: #f9f9f9;
+            color: #777;
+            padding: 30px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 10px 0;
+        }
+        /* Holly SVG - used as decor */
+        .holly {
+            width: 50px;
+            height: 50px;
+            display: block;
+            margin: 20px auto 0;
+        }
+        /* Snowflake SVG - for decoration */
+        .snowflake {
+            width: 20px;
+            height: 20px;
+            fill: #c82424;
+            vertical-align: middle;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body style="margin: 0 !important; padding: 0 !important; background-color: #f0f4f7;">
+    <!-- Main Email Table -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <!-- Container -->
+                <table border="0" cellpadding="0" cellspacing="0" class="container">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="header">
+                            <h1 class="header-title">Shhhh... It's a Secret!</h1>
+                            <p class="header-subtitle">The Sleigh Bells are Ringing...</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="content">
+                            <p style="font-size: 18px;">Hello {receiver_name},</p>
+                        
+                            
+                            <p>You've been chosen to spread some festive joy to:</p>
+                            
+                            <!-- The Gift Name Box -->
+                            <div class="gift-box">
+                                <p class="gift-box-label">Your Secret Santa recipient is:</p>
+                                <h2 class="gift-name">{recipient_name}</h2>
+                            </div>
+                            
+                            <p><strong>Keep it secret! Keep it safe!</strong> 🤫</p>
+                            
+                            <p>The price limit is $100. Happy gifting! 🎁</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer">
+                            <p>Warmly,</p>
+                            <p><strong>The Secret Elves 🎄</strong></p>
+                            <!-- Holly SVG Decor -->
+                            <svg class="holly" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="30" cy="30" r="10" fill="#c82424"/>
+                                <circle cx="45" cy="45" r="10" fill="#c82424"/>
+                                <circle cx="30" cy="60" r="10" fill="#c82424"/>
+                                <path d="M50 50 L80 20 Q90 50 80 80 L50 50Z" fill="#006400"/>
+                                <path d="M50 50 L20 80 Q50 90 80 80 L50 50Z" fill="#006400"/>
+                                <path d="M50 50 L20 20 Q50 10 80 20 L50 50Z" fill="#006400"/>
+                            </svg>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -12,7 +12,11 @@ def load_participants_from_json(json_path: str) -> tuple[List[Participant], Opti
         raise ValueError("JSON file must contain a 'participants' array")
     
     participants = [
-        Participant(name=p['name'], phone_number=p['phone_number'])
+        Participant(
+            name=p['name'],
+            phone_number=p.get('phone_number'),
+            email=p.get('email')
+        )
         for p in participants_data
     ]
     

@@ -5,15 +5,16 @@ from typing import List, Optional
 @dataclass
 class Participant:
     name: str
-    phone_number: str
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
 
     def __hash__(self):
-        return hash((self.name, self.phone_number))
+        return hash((self.name, self.phone_number, self.email))
 
     def __eq__(self, other):
         if not isinstance(other, Participant):
             return False
-        return self.name == other.name and self.phone_number == other.phone_number
+        return self.name == other.name and self.phone_number == other.phone_number and self.email == other.email
 
 
 @dataclass
