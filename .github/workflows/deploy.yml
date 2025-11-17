@@ -53,6 +53,7 @@ jobs:
         EOF
 
     - name: Deploy Infrastructure
+      id: deploy-infra
       uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -61,6 +62,7 @@ jobs:
         template: ./infrastructure/azuredeploy.bicep
         parameters: parameters.json
         deploymentName: secret-santa-deployment
+        failOnEmptyChanges: false
 
     - name: Create deployment package
       run: |

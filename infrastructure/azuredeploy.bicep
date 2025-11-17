@@ -19,6 +19,7 @@ param pythonVersion string = '3.11'
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
+  properties: {}
 }
 
 module mainModule 'main.bicep' = {
