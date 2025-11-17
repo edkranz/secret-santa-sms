@@ -26,11 +26,9 @@ Configure the following secrets in your GitHub repository:
 
 3. **AZURE_RG_NAME** - Name of the resource group (e.g., `rg-secret-santa`)
 
-4. **AZURE_WEBAPP_PUBLISH_PROFILE** - Publish profile from Azure App Service (get from Azure Portal)
+4. **AZURE_COMMUNICATION_CONNECTION_STRING** - Azure Communication Services connection string
 
-5. **AZURE_COMMUNICATION_CONNECTION_STRING** - Azure Communication Services connection string
-
-6. **AZURE_SENDER_EMAIL** - Verified sender email address for Azure Communication Services
+5. **AZURE_SENDER_EMAIL** - Verified sender email address for Azure Communication Services
 
 ## Manual Deployment
 
