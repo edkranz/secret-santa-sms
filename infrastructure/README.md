@@ -63,15 +63,20 @@ The infrastructure deploys:
 
 - **Resource Group** - Container for all resources
 - **App Service Plan** (Linux, Basic B1 tier)
+  - Name: `{appName}-plan-{uniqueSuffix}` (e.g., `secret-santa-plan-abc123xyz`)
   - 1.75 GB RAM, 1 vCPU
   - Reserved for Linux containers
 - **App Service** (Python 3.11)
+  - Name: `{appName}-app-{uniqueSuffix}` (e.g., `secret-santa-app-abc123xyz`)
+  - Globally unique name generated using `uniqueString(resourceGroup().id)`
   - HTTPS only enforced
   - Always On enabled
   - FTPS disabled for security
   - TLS 1.2 minimum
   - Build automation with Oryx
   - Gunicorn configured as startup command
+
+**Note:** Resource names include a unique suffix to ensure global uniqueness across Azure.
 
 ## Deployment Flow
 
@@ -94,10 +99,24 @@ The following environment variables are configured via GitHub Actions:
 ### Conflict Error
 
 If you see a "Conflict" error, it usually means:
-- Resources already exist from a previous deployment (this is normal, deployment will update them)
-- Resource names are not globally unique (unlikely with current naming scheme)
+- Resources already exist from a previous deployment with DIFFERENT names
+- The old resources need to be cleaned up first
 
-The deployment is idempotent and safe to re-run.
+**Solution 1 - Clean up old resources:**
+```bash
+# Run the cleanup script
+chmod +x cleanup-old-deployment.sh
+./cleanup-old-deployment.sh
+```
+
+**Solution 2 - Manual cleanup:**
+```bash
+# Delete the entire resource group and redeploy
+az group delete --name <your-rg-name> --yes
+# Wait 2-3 minutes, then re-run the deployment
+```
+
+**Note:** As of the latest fix, all resource names use `uniqueString()` to ensure global uniqueness and prevent conflicts.
 
 ### Deployment Failed
 

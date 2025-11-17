@@ -11,8 +11,9 @@ param appServicePlanSku string = 'B1'
 @allowed(['3.9', '3.10', '3.11', '3.12'])
 param pythonVersion string = '3.11'
 
-var appServicePlanName = '${appName}-plan'
-var appServiceName = '${appName}-app'
+var uniqueSuffix = uniqueString(resourceGroup().id)
+var appServicePlanName = '${appName}-plan-${uniqueSuffix}'
+var appServiceName = '${appName}-app-${uniqueSuffix}'
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
