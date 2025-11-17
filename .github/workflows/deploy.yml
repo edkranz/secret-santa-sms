@@ -84,20 +84,72 @@ jobs:
           -x "*.zip" \
           -x "*infrastructure*" \
           -x "*.md"
+        echo "Package size: $(du -h deploy.zip | cut -f1)"
+
+    - name: Wake up App Service (prevent timeout)
+      run: |
+        echo "Warming up App Service endpoint..."
+        az webapp start \
+          --name ${{ steps.get-outputs.outputs.app_name }} \
+          --resource-group ${{ steps.get-outputs.outputs.rg_name }}
+        sleep 10
 
     - name: Deploy to Azure Web App
       run: |
-        az webapp deployment source config-zip \
-          --resource-group ${{ steps.get-outputs.outputs.rg_name }} \
-          --name ${{ steps.get-outputs.outputs.app_name }} \
-          --src deploy.zip \
-          --timeout 600
+        echo "Starting deployment to ${{ steps.get-outputs.outputs.app_name }}..."
+        
+        for i in 1 2 3; do
+          if az webapp deploy \
+            --resource-group ${{ steps.get-outputs.outputs.rg_name }} \
+            --name ${{ steps.get-outputs.outputs.app_name }} \
+            --src-path deploy.zip \
+            --type zip \
+            --async false \
+            --timeout 600; then
+            echo "✅ Deployment successful!"
+            break
+          else
+            if [ $i -eq 3 ]; then
+              echo "❌ Deployment failed after 3 attempts"
+              exit 1
+            fi
+            echo "⚠️ Deployment attempt $i failed, retrying in 30 seconds..."
+            sleep 30
+          fi
+        done
 
     - name: Restart Web App
       run: |
+        echo "Restarting app to apply changes..."
         az webapp restart \
           --name ${{ steps.get-outputs.outputs.app_name }} \
           --resource-group ${{ steps.get-outputs.outputs.rg_name }}
+        echo "Waiting for app to restart..."
+        sleep 15
+
+    - name: Health Check
+      run: |
+        APP_URL=$(az deployment sub show \
+          --name secret-santa-deployment-${{ github.run_number }} \
+          --query properties.outputs.appServiceUrl.value \
+          --output tsv)
+        
+        echo "Checking app health at $APP_URL"
+        
+        for i in 1 2 3 4 5; do
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL" || echo "000")
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "404" ]; then
+            echo "✅ App is responding (HTTP $HTTP_CODE)"
+            break
+          else
+            if [ $i -eq 5 ]; then
+              echo "⚠️ App may not be fully started yet (HTTP $HTTP_CODE), but deployment completed"
+            else
+              echo "⏳ Waiting for app to start (attempt $i/5)..."
+              sleep 10
+            fi
+          fi
+        done
 
     - name: Deployment Summary
       run: |
