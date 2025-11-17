@@ -33,13 +33,15 @@ jobs:
       uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        resourceGroupName: ${{ secrets.AZURE_RG_NAME }}
         template: ./infrastructure/azuredeploy.bicep
         parameters: |
-          appName=secret-santa
+          resourceGroupName=${{ secrets.AZURE_RG_NAME }}
           location=australiaeast
+          appName=secret-santa
           appServicePlanSku=B1
           pythonVersion=${{ env.PYTHON_VERSION }}
+        deploymentName: secret-santa-deployment
+        deploymentScope: subscription
 
     - name: Create deployment package
       run: |
