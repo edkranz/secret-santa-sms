@@ -14,12 +14,12 @@ Configure the following secrets in your GitHub repository:
 
 1. **AZURE_CREDENTIALS** - Service principal credentials in JSON format:
    ```json
-   {
-     "appId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-     "displayName": "secret-santa",
-     "password": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-     "tenant": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-   }
+  {
+    "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "clientSecret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "subscriptionId": "8fe27bea-9457-4b6e-850b-618b322fe2cf",
+    "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
    ```
 
 2. **AZURE_SUBSCRIPTION_ID** - Your Azure subscription ID
