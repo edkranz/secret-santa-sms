@@ -12,33 +12,46 @@ A Python application that performs a Secret Santa draw and sends notifications (
 
 ## Setup
 
+### Local Development
+
 1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Configure credentials:
+2. Set up environment variables:
    - Copy `env.example` to `.env`: `cp env.example .env`
-   - Edit `.env` and fill in your credentials:
-   
-   **For SMS (Twilio):**
-   - Set `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`
-   - Set `TWILIO_FROM_NAME=SANTA` to send SMS from "SANTA" (alphanumeric sender ID)
-   - Or use `TWILIO_FROM_NUMBER` with a Twilio phone number
-   
-   **For Email (Azure Communication Services):**
-   - Set `AZURE_COMMUNICATION_CONNECTION_STRING` (your Azure Communication Services connection string)
-   - Set `AZURE_SENDER_EMAIL` (your verified sender email address)
-   - Optionally set `EMAIL_TEMPLATE_PATH` to use a custom HTML template (default: `email_template.html`)
+   - Edit `.env` and fill in your Azure Communication Services credentials
 
-3. Create participants JSON file:
-   - Copy `participants.json.example` to `participants.json`: `cp participants.json.example participants.json`
-   - Edit `participants.json` with your participants and couples
-   - Include `phone_number` for SMS or `email` for email notifications (or both)
+3. Run locally:
+```bash
+python web.py
+```
+
+### Azure Deployment
+
+See [infrastructure/README.md](infrastructure/README.md) for deployment instructions.
+
+The application is configured to deploy automatically via GitHub Actions when changes are pushed to the `main` branch.
 
 ## Usage
 
-### Basic Usage
+### Web Interface (Recommended)
+
+1. Start the web server:
+```bash
+python web.py
+```
+
+2. Open your browser to `http://localhost:3000`
+
+3. Select participants by clicking on their cards
+
+4. Add exclusions (couples) using the exclusion section
+
+5. Click "Send Secret Santa Draw" to perform the draw and send emails
+
+### Command Line Usage
 
 1. Edit `participants.json` with your participants:
 ```json
@@ -152,9 +165,11 @@ The project follows separation of concerns:
 - **sms_service.py**: SMS sending implementation (Twilio)
 - **email_service.py**: Email sending implementation (Azure Communication Services)
 - **template_loader.py**: HTML email template loader with placeholder replacement
+- **web.py**: Flask web application for the frontend interface
+- **templates/index.html**: Web UI template (Christmas-themed)
 - **config.py**: Configuration management
 - **json_loader.py**: JSON file parsing for participants and couples
-- **main.py**: Application orchestration
+- **main.py**: Command-line application orchestration
 
 ## How It Works
 

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Santa Draw</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: linear-gradient(135deg, #c82424 0%, #006400 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 20px;
+            animation: fall linear infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #c82424 0%, #d32f2f 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '🎄';
+            font-size: 60px;
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .header::after {
+            content: '🎄';
+            font-size: 60px;
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        h1 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 28px;
+            color: #c82424;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .participant-card {
+            background: #fff3e0;
+            border: 2px solid #c82424;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .participant-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .participant-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .participant-email {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .participant-card.editing {
+            background: #e3f2fd;
+            border-color: #1976d2;
+        }
+        
+        .participant-card input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .participant-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .edit-participant, .save-participant, .cancel-edit {
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            flex: 1;
+        }
+        
+        .save-participant {
+            background: #4caf50;
+        }
+        
+        .cancel-edit {
+            background: #757575;
+        }
+        
+        .edit-participant:hover {
+            background: #1565c0;
+        }
+        
+        .save-participant:hover {
+            background: #45a049;
+        }
+        
+        .cancel-edit:hover {
+            background: #616161;
+        }
+        
+        .add-participant-form {
+            background: #f8f9fa;
+            border: 2px dashed #c82424;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .form-row input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-row input:focus {
+            outline: none;
+            border-color: #c82424;
+        }
+        
+        .add-participant-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+        }
+        
+        .add-participant-btn:hover {
+            background: #45a049;
+        }
+        
+        .remove-participant {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .remove-participant:hover {
+            background: #d32f2f;
+        }
+        
+        .exclusions-section {
+            background: #fff9e6;
+            border: 2px dashed #ff9800;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .exclusion-pair {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .exclusion-pair select {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .remove-exclusion {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-exclusion {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .add-exclusion:hover {
+            background: #45a049;
+        }
+        
+        .send-button {
+            width: 100%;
+            background: linear-gradient(135deg, #c82424 0%, #d32f2f 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 28px;
+        }
+        
+        .send-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(200, 36, 36, 0.4);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .success-message {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .success-title {
+            font-weight: 600;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .sent-list {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .sent-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+        
+        .sent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sent-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .sent-email {
+            color: #666;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #c82424;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    {% for i in range(50) %}
+    <div class="snowflake" style="left: {{ (i * 2) }}%; animation-duration: {{ 5 + (i % 10) }}s; animation-delay: {{ i * 0.1 }}s;">❄</div>
+    {% endfor %}
+    
+    <div class="container">
+        <div class="header">
+            <h1>🎅 Secret Santa Draw 🎅</h1>
+            <p class="subtitle">Add participants, set exclusions, then send the draw!</p>
+        </div>
+        
+        <div class="content">
+            {% if error %}
+            <div class="error">{{ error }}</div>
+            {% endif %}
+            
+            <div class="section">
+                <h2 class="section-title">🎁 Participants</h2>
+                <div class="add-participant-form">
+                    <div class="form-row">
+                        <input type="text" id="participantName" placeholder="Name" />
+                        <input type="email" id="participantEmail" placeholder="Email address" />
+                    </div>
+                    <button class="add-participant-btn" onclick="addParticipant()">+ Add Participant</button>
+                </div>
+                <div class="participants-grid" id="participantsGrid">
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="exclusions-section">
+                    <h2 class="section-title">🚫 Exclusions (Couples)</h2>
+                    <div id="exclusionsContainer">
+                    </div>
+                    <button class="add-exclusion" onclick="addExclusion()">+ Add Exclusion</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px;">Sending emails... 🎄</p>
+            </div>
+            
+            <div class="success-message" id="successMessage">
+                <div class="success-title">🎉 Secret Santa draw complete! 🎄</div>
+                <div class="sent-list" id="sentList"></div>
+            </div>
+            
+            <button class="send-button" id="sendButton" onclick="performDraw()">Send Secret Santa Draw 🎄</button>
+        </div>
+    </div>
+    
+    <script>
+        let participants = [];
+        let editingParticipant = null;
+        
+        function addParticipant() {
+            const nameInput = document.getElementById('participantName');
+            const emailInput = document.getElementById('participantEmail');
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            
+            if (!name) {
+                alert('Please enter a name');
+                return;
+            }
+            
+            if (!email) {
+                alert('Please enter an email address');
+                return;
+            }
+            
+            if (participants.some(p => p.name.toLowerCase() === name.toLowerCase() && p !== editingParticipant)) {
+                alert('A participant with this name already exists');
+                return;
+            }
+            
+            if (editingParticipant) {
+                editingParticipant.name = name;
+                editingParticipant.email = email;
+                editingParticipant = null;
+            } else {
+                const participant = {name, email};
+                participants.push(participant);
+            }
+            
+            nameInput.value = '';
+            emailInput.value = '';
+            
+            renderParticipants();
+            updateExclusionDropdowns();
+        }
+        
+        function removeParticipant(name, e) {
+            e.stopPropagation();
+            if (confirm(`Remove ${name}?`)) {
+                participants = participants.filter(p => p.name !== name);
+                renderParticipants();
+                updateExclusionDropdowns();
+            }
+        }
+        
+        function editParticipant(participant, e) {
+            e.stopPropagation();
+            editingParticipant = participant;
+            renderParticipants();
+        }
+        
+        function cancelEdit() {
+            editingParticipant = null;
+            renderParticipants();
+        }
+        
+        function saveParticipant(participant, e) {
+            e.stopPropagation();
+            const card = e.target.closest('.participant-card');
+            const inputs = card.querySelectorAll('input');
+            const nameInput = inputs[0];
+            const emailInput = inputs[1];
+            const newName = nameInput.value.trim();
+            const newEmail = emailInput.value.trim();
+            
+            if (!newName) {
+                alert('Please enter a name');
+                return;
+            }
+            
+            if (!newEmail) {
+                alert('Please enter an email address');
+                return;
+            }
+            
+            if (participants.some(p => p.name.toLowerCase() === newName.toLowerCase() && p !== participant)) {
+                alert('A participant with this name already exists');
+                return;
+            }
+            
+            participant.name = newName;
+            participant.email = newEmail;
+            editingParticipant = null;
+            renderParticipants();
+            updateExclusionDropdowns();
+        }
+        
+        function renderParticipants() {
+            const grid = document.getElementById('participantsGrid');
+            grid.innerHTML = '';
+            
+            participants.forEach(participant => {
+                const card = document.createElement('div');
+                card.className = 'participant-card';
+                if (editingParticipant === participant) {
+                    card.classList.add('editing');
+                }
+                
+                if (editingParticipant === participant) {
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.value = participant.name;
+                    nameInput.className = 'participant-name';
+                    
+                    const emailInput = document.createElement('input');
+                    emailInput.type = 'email';
+                    emailInput.value = participant.email;
+                    emailInput.className = 'participant-email';
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'participant-actions';
+                    
+                    const saveBtn = document.createElement('button');
+                    saveBtn.className = 'save-participant';
+                    saveBtn.textContent = 'Save';
+                    saveBtn.onclick = (e) => saveParticipant(participant, e);
+                    
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'cancel-edit';
+                    cancelBtn.textContent = 'Cancel';
+                    cancelBtn.onclick = cancelEdit;
+                    
+                    actionsDiv.appendChild(saveBtn);
+                    actionsDiv.appendChild(cancelBtn);
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-participant';
+                    removeBtn.textContent = '×';
+                    removeBtn.onclick = (e) => removeParticipant(participant.name, e);
+                    
+                    card.appendChild(nameInput);
+                    card.appendChild(emailInput);
+                    card.appendChild(actionsDiv);
+                    card.appendChild(removeBtn);
+                } else {
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'participant-name';
+                    nameDiv.textContent = participant.name;
+                    
+                    const emailDiv = document.createElement('div');
+                    emailDiv.className = 'participant-email';
+                    emailDiv.textContent = participant.email;
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'participant-actions';
+                    
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'edit-participant';
+                    editBtn.textContent = 'Edit';
+                    editBtn.onclick = (e) => editParticipant(participant, e);
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-participant';
+                    removeBtn.textContent = '×';
+                    removeBtn.onclick = (e) => removeParticipant(participant.name, e);
+                    
+                    actionsDiv.appendChild(editBtn);
+                    
+                    card.appendChild(nameDiv);
+                    card.appendChild(emailDiv);
+                    card.appendChild(actionsDiv);
+                    card.appendChild(removeBtn);
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        function updateExclusionDropdowns() {
+            document.querySelectorAll('.exclusion-pair').forEach(pair => {
+                const select1 = pair.querySelector('.person1-select');
+                const select2 = pair.querySelector('.person2-select');
+                const currentValue1 = select1.value;
+                const currentValue2 = select2.value;
+                
+                select1.innerHTML = '<option value="">Select person...</option>';
+                select2.innerHTML = '<option value="">Select person...</option>';
+                
+                participants.forEach(p => {
+                    const option1 = document.createElement('option');
+                    option1.value = p.name;
+                    option1.textContent = p.name;
+                    if (option1.value === currentValue1) option1.selected = true;
+                    select1.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = p.name;
+                    option2.textContent = p.name;
+                    if (option2.value === currentValue2) option2.selected = true;
+                    select2.appendChild(option2);
+                });
+            });
+        }
+        
+        function addExclusion() {
+            const container = document.getElementById('exclusionsContainer');
+            const pair = document.createElement('div');
+            pair.className = 'exclusion-pair';
+            
+            let select1 = '<select class="person1-select"><option value="">Select person...</option>';
+            let select2 = '<select class="person2-select"><option value="">Select person...</option>';
+            
+            participants.forEach(p => {
+                select1 += `<option value="${p.name}">${p.name}</option>`;
+                select2 += `<option value="${p.name}">${p.name}</option>`;
+            });
+            
+            select1 += '</select>';
+            select2 += '</select>';
+            
+            pair.innerHTML = select1 + '<span>cannot give/receive</span>' + select2 + '<button class="remove-exclusion" onclick="removeExclusion(this)">×</button>';
+            container.appendChild(pair);
+        }
+        
+        function removeExclusion(button) {
+            button.parentElement.remove();
+        }
+        
+        function getExclusions() {
+            const exclusions = [];
+            document.querySelectorAll('.exclusion-pair').forEach(pair => {
+                const person1 = pair.querySelector('.person1-select').value;
+                const person2 = pair.querySelector('.person2-select').value;
+                if (person1 && person2 && person1 !== person2) {
+                    exclusions.push({person1, person2});
+                }
+            });
+            return exclusions;
+        }
+        
+        document.getElementById('participantName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('participantEmail').focus();
+            }
+        });
+        
+        document.getElementById('participantEmail').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addParticipant();
+            }
+        });
+        
+        async function performDraw() {
+            if (participants.length < 2) {
+                alert('Please add at least 2 participants!');
+                return;
+            }
+            
+            if (editingParticipant) {
+                alert('Please finish editing before sending the draw');
+                return;
+            }
+            
+            const exclusions = getExclusions();
+            const sendButton = document.getElementById('sendButton');
+            const loading = document.getElementById('loading');
+            const successMessage = document.getElementById('successMessage');
+            
+            sendButton.disabled = true;
+            loading.classList.add('show');
+            successMessage.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/draw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        participants: participants,
+                        exclusions: exclusions
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    const sentList = document.getElementById('sentList');
+                    const sentResults = data.results.filter(r => r.status === 'sent');
+                    const failedResults = data.results.filter(r => r.status !== 'sent');
+                    
+                    if (sentResults.length > 0) {
+                        let html = '<div style="margin-bottom: 10px; font-weight: 600;">Emails sent to:</div>';
+                        sentResults.forEach(result => {
+                            const participant = participants.find(p => p.name === result.giver);
+                            if (participant) {
+                                html += `<div class="sent-item">
+                                    <span class="sent-name">${participant.name}</span>
+                                    <span class="sent-email">${participant.email}</span>
+                                </div>`;
+                            }
+                        });
+                        sentList.innerHTML = html;
+                        successMessage.classList.add('show');
+                    }
+                    
+                    if (failedResults.length > 0) {
+                        alert(`Draw completed, but ${failedResults.length} email(s) failed to send. Check the server logs for details.`);
+                    }
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                sendButton.disabled = false;
+                loading.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>
+
